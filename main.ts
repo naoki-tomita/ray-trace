@@ -5,26 +5,15 @@ function demo() {
     z: number;
   }
 
-  class Sphere {
+  interface Sphere {
     radius: number;
     center: Vector3D;
-    color: [number, number, number];
+    color: Color;
     specular: number;
     refrectance: number;
-    constructor(
-      radius: number,
-      center: Vector3D,
-      color: [number, number, number],
-      specular: number,
-      refrectance: number
-    ) {
-      this.radius = radius;
-      this.center = center;
-      this.color = color;
-      this.specular = specular;
-      this.refrectance = refrectance;
-    }
   }
+
+  type Color = [number, number, number];
 
   /**
    * 定数。
@@ -34,11 +23,46 @@ function demo() {
   var SPHERES_DEF: Sphere[] = [
     // 球体。
     // 半径, [中心],  R, G, B(0..9), 鏡面指数, 反射率(0..9),
-    new Sphere(99, { x: 0, y: -99, z: 0 }, [9, 9, 0], 99, 1), // 黄
-    new Sphere(1, { x: 0, y: 0, z: 3 }, [9, 0, 0], 99, 3), // 赤
-    new Sphere(1, { x: -2, y: 1, z: 4 }, [0, 9, 0], 9, 5), // 緑
-    new Sphere(1, { x: 2, y: 1, z: 4 }, [0, 0, 9], 99, 3), // 青
-    new Sphere(1, { x: 0, y: 2, z: 9 }, [9, 6, 3], 99, 1) // 橙
+    {
+      // 黄
+      radius: 99,
+      center: { x: 0, y: -99, z: 0 },
+      color: [9, 9, 0],
+      specular: 99,
+      refrectance: 1
+    },
+    {
+      // 赤
+      radius: 1,
+      center: { x: 0, y: 0, z: 3 },
+      color: [9, 0, 0],
+      specular: 99,
+      refrectance: 3
+    },
+    {
+      // 緑
+      radius: 1,
+      center: { x: -2, y: 1, z: 4 },
+      color: [0, 9, 0],
+      specular: 9,
+      refrectance: 5
+    },
+    {
+      // 青
+      radius: 1,
+      center: { x: 2, y: 1, z: 4 },
+      color: [0, 0, 9],
+      specular: 99,
+      refrectance: 3
+    },
+    {
+      // 橙
+      radius: 1,
+      center: { x: 0, y: 2, z: 9 },
+      color: [9, 6, 3],
+      refrectance: 99,
+      specular: 1
+    }
   ];
   var AMBIENT_LIGHT = 2; // 環境光。
   var POINT_LIGHTS: Array<{
@@ -122,10 +146,10 @@ function demo() {
   function traceRay(
     B: Vector3D,
     D: Vector3D,
-    tMin: any,
-    tMax: any,
-    depth: any,
-    colorIndex: any
+    tMin: number,
+    tMax: number,
+    depth: number,
+    colorIndex: number
   ) {
     // 最も近い交点を求める。なければ黒を返す。
     var result = closestIntersection(B, D, tMin, tMax);
@@ -192,7 +216,12 @@ function demo() {
    *     t      // 交差パラメータ。
    * }
    */
-  function closestIntersection(B: any, D: any, tMin: any, tMax: any) {
+  function closestIntersection(
+    B: Vector3D,
+    D: Vector3D,
+    tMin: number,
+    tMax: number
+  ) {
     var K1 = dot3d(D, D); // 2次方程式の係数。
     var t = CANVAS_SIZE; // 交点が無い場合。
     var index = -1;
