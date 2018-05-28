@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "typescript": "^2.8.3"
+  },
+  "name": "ray-trace",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc"
+  }
+}
