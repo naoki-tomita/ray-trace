@@ -75,7 +75,7 @@ function demo() {
         // 位置。
         x: 2,
         y: 2,
-        z: 0
+        z: 0,
       }
     }
   ];
@@ -102,7 +102,7 @@ function demo() {
     // 赤玉を動かす。
     SPHERES_DEF[1].center.z = 3 + Math.sin(now / 1000 * (Math.PI * 2) * 0.1);
     SPHERES_DEF[1].center.x = 0 + Math.cos(now / 1000 * (Math.PI * 2) * 0.1);
-
+    POINT_LIGHTS[0].position.z+= 0.3;
     // レンダリング。
     render(now);
 
@@ -119,10 +119,12 @@ function demo() {
     // (y, x)で走査。
     var di = 0;
     var halfSize = CANVAS_SIZE / 2;
-    for (var y = halfSize; -halfSize < y; --y) {
-      for (var x = -halfSize; x < halfSize; ++x) {
+    (Array.apply(null, Array(CANVAS_SIZE)) as null[]).forEach((_, i) => {
+      const y = halfSize - i;
+      (Array.apply(null, Array(CANVAS_SIZE)) as null[]).forEach((_, i) => {
+        const x = i - halfSize;
         // カラーチャネルごとに、
-        for (let color = 0; color < 3; ++color) {
+        [0, 1, 2].forEach((color: 0 | 1 | 2) => {
           gRawData[di++] = traceRay(
             { x: 0, y: 1, z: 0 }, // カメラ座標
             { x: x / CANVAS_SIZE, y: y / CANVAS_SIZE, z: 1 }, // 光の方向
@@ -131,10 +133,10 @@ function demo() {
             2, // depth
             color // color channel
           );
-        }
+        });
         gRawData[di++] = 255; // alpha
-      }
-    }
+      });
+    });
     gCtx.putImageData(gImageData, 0, 0);
   }
 
@@ -149,7 +151,7 @@ function demo() {
     tMin: number,
     tMax: number,
     depth: number,
-    colorIndex: number
+    colorIndex: 0 | 1 | 2,
   ) {
     // 最も近い交点を求める。なければ黒を返す。
     var result = closestIntersection(B, D, tMin, tMax);
@@ -165,7 +167,7 @@ function demo() {
 
     // 環境光に加え、点光源ごとに、
     var light = AMBIENT_LIGHT;
-    for (var i = 0; i < POINT_LIGHTS.length; i += 2) {
+    for (var i = 0; i < POINT_LIGHTS.length; i++) {
       var lightIntensity = POINT_LIGHTS[i].intensity;
       var lightPos = POINT_LIGHTS[i].position;
 

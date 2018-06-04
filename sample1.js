@@ -1,36 +1,65 @@
 function demo() {
-    var Sphere = /** @class */ (function () {
-        function Sphere(radius, center, color, specular, refrectance) {
-            this.radius = radius;
-            this.center = center;
-            this.color = color;
-            this.specular = specular;
-            this.refrectance = refrectance;
-        }
-        return Sphere;
-    }());
     /**
      * 定数。
      */
     var ANIMATION_TIME = 5000; // アニメーション継続時間。(msec)
     var CANVAS_SIZE = 300; // canvasサイズ。("十分大きな値"としても使う)
     var SPHERES_DEF = [
+        // 球体。
         // 半径, [中心],  R, G, B(0..9), 鏡面指数, 反射率(0..9),
-        new Sphere(99, { x: 0, y: -99, z: 0 }, [9, 9, 0], 99, 1),
-        new Sphere(1, { x: 0, y: 0, z: 3 }, [9, 0, 0], 99, 3),
-        new Sphere(1, { x: -2, y: 1, z: 4 }, [0, 9, 0], 9, 5),
-        new Sphere(1, { x: 2, y: 1, z: 4 }, [0, 0, 9], 99, 3),
-        new Sphere(1, { x: 0, y: 2, z: 9 }, [9, 6, 3], 99, 1),
+        {
+            // 黄
+            radius: 99,
+            center: { x: 0, y: -99, z: 0 },
+            color: [9, 9, 0],
+            specular: 99,
+            refrectance: 1
+        },
+        {
+            // 赤
+            radius: 1,
+            center: { x: 0, y: 0, z: 3 },
+            color: [9, 0, 0],
+            specular: 99,
+            refrectance: 3
+        },
+        {
+            // 緑
+            radius: 1,
+            center: { x: -2, y: 1, z: 4 },
+            color: [0, 9, 0],
+            specular: 9,
+            refrectance: 5
+        },
+        {
+            // 青
+            radius: 1,
+            center: { x: 2, y: 1, z: 4 },
+            color: [0, 0, 9],
+            specular: 99,
+            refrectance: 3
+        },
+        {
+            // 橙
+            radius: 1,
+            center: { x: 0, y: 2, z: 9 },
+            color: [9, 6, 3],
+            refrectance: 99,
+            specular: 1
+        }
     ];
     var AMBIENT_LIGHT = 2; // 環境光。
-    var POINT_LIGHTS = [{
+    var POINT_LIGHTS = [
+        {
             intensity: 8,
             position: {
+                // 位置。
                 x: 2,
                 y: 2,
                 z: 0,
-            },
-        }];
+            }
+        }
+    ];
     /**
      * メイン。
      */
@@ -50,6 +79,7 @@ function demo() {
         // 赤玉を動かす。
         SPHERES_DEF[1].center.z = 3 + Math.sin(now / 1000 * (Math.PI * 2) * 0.1);
         SPHERES_DEF[1].center.x = 0 + Math.cos(now / 1000 * (Math.PI * 2) * 0.1);
+        POINT_LIGHTS[0].position.z += 0.3;
         // レンダリング。
         render(now);
         // 次フレームを仕掛ける。
@@ -64,10 +94,12 @@ function demo() {
         // (y, x)で走査。
         var di = 0;
         var halfSize = CANVAS_SIZE / 2;
-        for (var y = halfSize; -halfSize < y; --y) {
-            for (var x = -halfSize; x < halfSize; ++x) {
+        Array.apply(null, Array(CANVAS_SIZE)).forEach(function (_, i) {
+            var y = halfSize - i;
+            Array.apply(null, Array(CANVAS_SIZE)).forEach(function (_, i) {
+                var x = i - halfSize;
                 // カラーチャネルごとに、
-                for (var color = 0; color < 3; ++color) {
+                [0, 1, 2].forEach(function (color) {
                     gRawData[di++] = traceRay({ x: 0, y: 1, z: 0 }, // カメラ座標
                     { x: x / CANVAS_SIZE, y: y / CANVAS_SIZE, z: 1 }, // 光の方向
                     1, // tMin (projection planeから)
@@ -75,10 +107,10 @@ function demo() {
                     2, // depth
                     color // color channel
                     );
-                }
+                });
                 gRawData[di++] = 255; // alpha
-            }
-        }
+            });
+        });
         gCtx.putImageData(gImageData, 0, 0);
     }
     /**
@@ -99,7 +131,7 @@ function demo() {
         var n = dot3d(N, N);
         // 環境光に加え、点光源ごとに、
         var light = AMBIENT_LIGHT;
-        for (var i = 0; i < POINT_LIGHTS.length; i += 2) {
+        for (var i = 0; i < POINT_LIGHTS.length; i++) {
             var lightIntensity = POINT_LIGHTS[i].intensity;
             var lightPos = POINT_LIGHTS[i].position;
             // 交点から光源へのベクトルを求める。
@@ -107,9 +139,12 @@ function demo() {
             var k = dot3d(N, L);
             // 光源の明るさを加算。影に隠れている場合は見えない。
             var M = aMinusBk(L, N, 2 * k / n);
-            var shadow = (closestIntersection(ip, L, 1 / CANVAS_SIZE, 1).index * -1);
-            light += lightIntensity * shadow * (Math.max(0, k / Math.sqrt(dot3d(L, L) * n)) +
-                Math.max(0, Math.pow(dot3d(M, D) / Math.sqrt(dot3d(M, M) * dot3d(D, D)), SPHERES_DEF[result.index].specular)));
+            var shadow = closestIntersection(ip, L, 1 / CANVAS_SIZE, 1).index * -1;
+            light +=
+                lightIntensity *
+                    shadow *
+                    (Math.max(0, k / Math.sqrt(dot3d(L, L) * n)) +
+                        Math.max(0, Math.pow(dot3d(M, D) / Math.sqrt(dot3d(M, M) * dot3d(D, D)), SPHERES_DEF[result.index].specular)));
         }
         // color[0~9] * intensity[0~10] * 2.8 -> [0~255]
         var localColor = SPHERES_DEF[result.index].color[colorIndex] * light * 2.8;
@@ -141,7 +176,8 @@ function demo() {
             var K2 = -2 * dot3d(j, D); // 2次方程式の係数。
             var K3 = dot3d(j, j) - radius * radius; // 2次方程式の係数。
             var d = Math.sqrt(K2 * K2 - 4 * K1 * K3); // 判別式。
-            if (d) { // 解があれば、
+            if (d) {
+                // 解があれば、
                 for (var e = 0; e < 2; ++e, d = -d) {
                     var f = (K2 - d) / (2 * K1); // f: tの候補
                     if (tMin < f && f < tMax && f < t) {
